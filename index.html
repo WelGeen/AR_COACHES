@@ -1,0 +1,246 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+    <script async src="https://unpkg.com/es-module-shims@1.7.3/dist/es-module-shims.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+	
+    <script type="importmap">
+		{
+			"imports": {
+				"three": "https://unpkg.com/three@0.153.0/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@0.153.0/examples/jsm/",
+				"mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-three.prod.js"
+			}
+		}
+    </script>
+    <script type="module">
+		import * as THREE from 'three';
+		import { MindARThree } from 'mindar-image-three';
+		import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+		
+		const mindarThree = new MindARThree({
+			container: document.querySelector("#mindar-container"),
+			imageTargetSrc: "https://welgeen.nl/AR/targets.txt"
+		});
+		const {renderer, scene, camera} = mindarThree;
+		const anchor = mindarThree.addAnchor(0);
+		
+		const clock = new THREE.Clock();
+		const managerchris = new THREE.LoadingManager();
+		const managerpieter = new THREE.LoadingManager();
+		
+		let mixerPieter;
+		let mixerChris;
+		let loader_count = 0;
+		let sound = false;
+		const light = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 1 );
+		light.position.set( 1, 1, 0.5 );
+		anchor.group.add( light );
+		
+		//const geometry = new THREE.PlaneGeometry(1, 0.55);
+		//const material = new THREE.MeshBasicMaterial( {color: 0x00ffff, transparent: true, opacity: 0.5} );
+		//const plane = new THREE.Mesh( geometry, material );
+		
+		//anchor.group.add(plane);
+
+		const start = async() => {
+			
+			await mindarThree.start();
+			
+			renderer.setAnimationLoop(() => {
+				if (sound == false && anchor.group.visible){
+					audio.play();
+					sound = true; 
+				};
+				const delta = clock.getDelta();
+				if ( mixerChris ) mixerChris.update( delta );
+				if ( mixerPieter ) mixerPieter.update( delta );
+				
+			  renderer.render(scene, camera);
+			});
+		}
+		
+		function LoadPieterenChris() {
+			// inladden van de fbx models. let op deze zijn als .txt op de server gezet omdat het fbx formaat gewiegerd wordt.  
+			
+			loadFBX_PIETER('https://welgeen.nl/AR/fbx_as_txt/pieter.txt');
+			loadFBX_CHRIS('https://welgeen.nl/AR/fbx_as_txt/chris.txt');
+
+		}
+		//audio.play();
+		function loadFBX_CHRIS( url ) {
+
+			managerchris.onStart  = function ( ) {
+				chrisload.innerHTML = "loading..";
+			};
+			managerchris.onLoad = function ( ) {
+				loader_count = loader_count + 1;
+				chrisload.innerHTML = "ready..";
+				if(loader_count==2){
+					document.querySelector("#nav-container").style.display = "none";
+					start();
+				}
+			};
+			const loaderchris = new FBXLoader(managerchris);
+			loaderchris.load( url, function ( object ) {
+
+				mixerChris = new THREE.AnimationMixer( object );
+				if(object.animations.length>0){
+					const actionchris = mixerChris.clipAction( object.animations[ 0 ] );
+					actionchris.play();
+				}
+				
+				object.rotation.x = Math.PI / 2;
+				object.rotation.y = Math.PI / 2;
+				object.scale.set( 0.5, 0.5, 0.5 );
+				object.position.set( 0.2, 0, 0);
+				anchor.group.add(object);
+				
+			} );
+		}
+		
+		function loadFBX_PIETER( url ) {
+			
+			managerpieter.onStart  = function ( ) {
+				pieterload.innerHTML = "loading..";
+			};
+			managerpieter.onLoad = function ( ) {
+				pieterload.innerHTML = "ready..";
+				loader_count = loader_count+1;
+				
+				if(loader_count==2){
+					document.querySelector("#nav-container").style.display = "none";
+					start();
+				}
+			};
+			const loaderpieter = new FBXLoader(managerpieter);
+			loaderpieter.load( url, function ( object ) {
+				//animate();
+				console.log("#mindar-container:loadFBX_PIETER");
+				
+				mixerPieter = new THREE.AnimationMixer( object );
+				if(object.animations.length>0){
+					const actionpieter = mixerPieter.clipAction( object.animations[ 0 ] );
+					actionpieter.play();
+				}
+				
+				object.rotation.x = Math.PI / 2;
+				object.rotation.y = Math.PI / -2;
+				object.scale.set( 0.5, 0.5, 0.5 );
+				object.position.set( -0.2, 0, 0);
+				anchor.group.add(object);
+				
+			} );
+		}	
+		
+		const startButton = document.querySelector("#startButton");
+		startButton.addEventListener("click", () => {
+			audio.play();
+			audio.pause();
+			startButton.innerHTML = "Loading";
+			LoadPieterenChris();
+		}); 
+		 
+		const infoButton = document.querySelector("#infoButton");
+		infoButton.addEventListener("click", () => {
+			info.style.display = "block";
+			const myTimeout = setTimeout(
+				function(){info.style.display = "none";}
+			,3000);
+		});
+    </script>
+	
+	
+  </head>
+  <body>
+	
+		<div id="mindar-container" ></div>
+		
+		<div id="nav-container">
+			<div id="nav-head" class="borb" >
+				<div class="center logohead padding-top"><img class="logo" src="img/logo.png" ></div>
+				<div class="center textc" >AR</div>
+				<div class="center textsm">COACHES </div>
+				<div class="center padding-top">
+					<img align=left src="img/chris.jpg" >
+					<img align=left src="img/pieter.jpg" >
+				</div>
+				<div class="center textload">
+					<div class="load" id="chrisload" >Geen</div>
+					<div class="load" id="pieterload" >Wel</div> 
+				</div>
+			</div>
+			
+			<div id="nav-middle">
+				<div class="textcoach">
+					<p>Jij hebt het in je!</p>
+					
+					<p>Schets je doelen, schrijf ze op, die zullen jou helpen naar oplossingen. Leer hoe je die nieuwe doelen blijvend kunt bereiken. En blijf ontdekken! Wees niet bang om stappen te zetten en te groeien.</p>
+					
+					<p>Vertrouw op jezelf en zeg:<br>'I can do it!'</p>
+					
+				</div>
+			</div>
+			
+			<div id="nav-footer">
+				<div class="center">
+					<div id="startButton">start</div>
+				</div>
+		
+				<div class="center textsmm">getest in safari en chrome </div>
+				<div class="center tcol" >WELGEEN.NL</div>
+				<audio id="audio" src="" ></audio>
+			</div>
+			
+			<div id="nav-footer-back">
+				
+			</div>
+		
+		</div>
+		<div id="info">
+			<p>credits:</p>
+			<p>www.mixamo.com</p>
+			<p>metaperson.avatarsdk.com</p>
+			<p>hiukim.github.io/mind-ar-js-doc</p>
+			<p>threejs.org</p>
+		</div> 
+		<div id="infoButton">credits</div> 
+	<script>
+		const audiolist = [
+			'sound/lekkerbezig.mp3',
+			'sound/erdinc01.mp3',
+			'sound/erdinc02.mp3',
+			'sound/sound1 (1).mp3',
+			'sound/sound1 (2).mp3',
+			'sound/sound1 (3).mp3',
+			'sound/sound1 (4).mp3',
+			'sound/sound1 (5).mp3',
+			'sound/sound1 (6).mp3',
+			'sound/sound1 (7).mp3'
+		]
+		const chrisload = document.querySelector("#chrisload");
+		const pieterload = document.querySelector("#pieterload");
+		const audio = document.querySelector("#audio");
+		const info = document.querySelector("#info");
+		
+		audio.addEventListener("ended", function(){
+			changeAudio(); 
+		});
+		
+		function changeAudio(){
+			audio.currentTime = 0;
+			const random = Math.floor(Math.random() * audiolist.length);
+			audio.src = audiolist[random]
+			audio.load();
+			audio.play();
+			
+			audio.addEventListener("ended", function(){
+				changeAudio(); 
+			});
+			sound = false;
+		}
+		changeAudio();
+	</script>
+  </body>
+</html>
