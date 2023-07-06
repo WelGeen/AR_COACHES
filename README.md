@@ -15,5 +15,5 @@ www.metaperson.avatarsdk.com
 www.hiukim.github.io/mind-ar-js-doc  
 www.threejs.org  
 
-# Aandachtounten
+# Aandachtspunten
 De extensie van het bestandstype .fbx hebben we gewijzigd naar .txt. Deze aanpassing is gedaan zodat een webserver de .fbx-bestanden niet tegenhoudt en deze zonder problemen naar de client kan verzenden. We hebben dit uitgebreid getest in zowel Safari als Chrome om een soepele gebruikerservaring te garanderen.
